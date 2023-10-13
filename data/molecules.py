@@ -171,12 +171,12 @@ def laplacian_positional_encoding(g, pos_enc_dim):
     """
 
     # Laplacian
-    A = g.adjacency_matrix_scipy(return_edge_ids=False).astype(float)
+    A = g.adj().to_dense()
     N = sp.diags(dgl.backend.asnumpy(g.in_degrees()).clip(1) ** -0.5, dtype=float)
-    L = sp.eye(g.number_of_nodes()) - N * A * N
+    L = sp.eye(g.number_of_nodes()) - N @ A @ N
 
     # Eigenvectors with numpy
-    EigVal, EigVec = np.linalg.eig(L.toarray())
+    EigVal, EigVec = np.linalg.eig(L)
     idx = EigVal.argsort() # increasing order
     EigVal, EigVec = EigVal[idx], np.real(EigVec[:,idx])
     g.ndata['lap_pos_enc'] = torch.from_numpy(EigVec[:,1:pos_enc_dim+1]).float() 
@@ -266,7 +266,7 @@ class MoleculeDataset(torch.utils.data.Dataset):
     def collate(self, samples):
         # The input samples is a list of pairs (graph, label).
         graphs, labels = map(list, zip(*samples))
-        labels = torch.tensor(np.array(labels)).unsqueeze(1)
+        labels = torch.tensor(np.array(labels, dtype=np.int32)).unsqueeze(1)
         batched_graph = dgl.batch(graphs)       
         
         return batched_graph, labels
@@ -303,5 +303,3 @@ class MoleculeDataset(torch.utils.data.Dataset):
         self.train.graph_lists = [wl_positional_encoding(g) for g in self.train.graph_lists]
         self.val.graph_lists = [wl_positional_encoding(g) for g in self.val.graph_lists]
         self.test.graph_lists = [wl_positional_encoding(g) for g in self.test.graph_lists]
-
-

@@ -11,7 +11,7 @@ def LoadData(DATASET_NAME):
         ; dataset object
     """    
     # handling for (ZINC) molecule dataset
-    if DATASET_NAME == 'ZINC':
+    if DATASET_NAME in ['ZINC', 'ZINC-full', 'AQSOL']:
         return MoleculeDataset(DATASET_NAME)
 
     # handling for SBM datasets
